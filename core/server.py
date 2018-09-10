@@ -1,87 +1,47 @@
-import socket
 import os
 from lib import comm
+# from threading import Thread
 
 
-class MYTCPServer:
-    address_family = socket.AF_INET
-    socket_type = socket.SOCK_STREAM
+class MYTCPServer():
     allow_reuse_address = False
     max_packet_size = 1024
     coding = 'utf-8'
     request_queue_size = 5
 
-    def __init__(self, server_address, bind_and_activate=True):
+    def __init__(self, conn):
         """Constructor.  May be extended, do not override."""
-        self.server_address = server_address
-        self.socket = socket.socket(self.address_family,
-                                    self.socket_type)
+        super().__init__()
+        self.conn = conn
         self.server_dir = ''
         self.name = ''
-        if bind_and_activate:
-            try:
-                self.server_bind()
-                self.server_activate()
-            except:
-                self.server_close()
-                raise
-
-    def server_bind(self):
-        """Called by constructor to bind the socket.
-        """
-        if self.allow_reuse_address:
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind(self.server_address)
-        self.server_address = self.socket.getsockname()
-
-    def server_activate(self):
-        """Called by constructor to activate the server.
-        """
-        self.socket.listen(self.request_queue_size)
-
-    def server_close(self):
-        """Called to clean-up the server.
-        """
-        self.socket.close()
-
-    def get_request(self):
-        """Get the request and client address from the socket.
-        """
-        return self.socket.accept()
-
-    def close_request(self, request):
-        """Called to clean up an individual request."""
-        request.close()
 
     def run(self):
+        # 验证用户:
         while True:
-            # 建立通信循环
-            self.conn, self.client_addr = self.get_request()
-            # 验证用户:
-            while True:
-                head_dic = comm.head_dic_unpack(self)
-                if head_dic == -1: break
+            head_dic = comm.head_dic_unpack(self)
+            if head_dic == -1: break
 
-                # 验证通过
-                if comm.auth(head_dic['name'], 'password') == head_dic['password']:
-                    # 登录成功设置用户根目录和用户名
-                    self.server_dir = 'user/%s' % head_dic['name']
-                    self.name = head_dic['name']
+            # 验证通过
+            if comm.auth(head_dic['name'], 'password') == head_dic['password']:
+                # 登录成功设置用户根目录和用户名
+                self.server_dir = 'user/%s' % head_dic['name']
+                self.name = head_dic['name']
 
-                    self.conn.send('login success'.encode('utf-8'))
-                    while True:
-                        try:
-                            head_dic = comm.head_dic_unpack(self)
-                            # print(head_dic)  # 测试通过
-                            cmd = head_dic['cmd']
-                            if hasattr(self, cmd):
-                                func = getattr(self, cmd)
-                                func(head_dic)
-                        except Exception as e:
-                            break
-                # 验证失败发送失败信息
-                else:
-                    self.conn.send('either of  name or password is wrong'.encode('utf-8'))
+                self.conn.send('login success'.encode('utf-8'))
+                while True:
+                    try:
+                        head_dic = comm.head_dic_unpack(self)
+                        # print(head_dic)  # 测试通过
+                        cmd = head_dic['cmd']
+                        if hasattr(self, cmd):
+                            func = getattr(self, cmd)
+                            func(head_dic)
+                    except Exception as e:
+                        break
+            # 验证失败发送失败信息
+            else:
+                self.conn.send('either of  name or password is wrong'.encode('utf-8'))
 
     def put(self, args):
         file_path = os.path.normpath(os.path.join(
