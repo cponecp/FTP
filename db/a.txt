@@ -1,3 +1,0 @@
-pwd
-dir
-tasklist
