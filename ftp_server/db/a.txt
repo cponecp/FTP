@@ -1,0 +1,3 @@
+pwd
+dir
+tasklist
