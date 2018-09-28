@@ -41,9 +41,9 @@ def head_dic_send(self, dic):
     head_json_bytes = bytes(head_json, encoding=self.coding)
     head_struct = struct.pack('i', len(head_json_bytes))
 
-    if hasattr(self, 'conn'):
-        self.conn.send(head_struct)
-        self.conn.send(head_json_bytes)
+    if hasattr(self, 'request'):
+        self.request.send(head_struct)
+        self.request.send(head_json_bytes)
     else:
         self.socket.send(head_struct)
         self.socket.send(head_json_bytes)
@@ -52,15 +52,15 @@ def head_dic_send(self, dic):
 
 
 def head_dic_unpack(self):
-    if hasattr(self, 'conn'):
-        head_struct = self.conn.recv(4)
+    if hasattr(self, 'request'):
+        head_struct = self.request.recv(4)
     else:
         head_struct = self.socket.recv(4)
     if not head_struct: return -1
 
     head_len = struct.unpack('i', head_struct)[0]
-    if hasattr(self, 'conn'):
-        head_json = self.conn.recv(head_len).decode(self.coding)
+    if hasattr(self, 'request'):
+        head_json = self.request.recv(head_len).decode(self.coding)
     else:
         head_json = self.socket.recv(head_len).decode(self.coding)
 
@@ -73,8 +73,6 @@ def progress(percent, width=50):
     show_str = ('[%%-%ds]' % width) % (int(width * percent) * '#')
     print('\r%s %d%%' % (show_str, int(100 * percent)), file=sys.stdout, flush=True, end='')
 
-# if __name__ == '__main__':
-#     config = configparser.ConfigParser()
-#     config.read(r'../conf/config.ini')
-#     val = config.get('egon', 'max_store')
-#     print(val ,type(val))
+
+if __name__ == '__main__':
+    pass

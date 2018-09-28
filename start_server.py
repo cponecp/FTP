@@ -1,13 +1,4 @@
-from core import server
-import socket
-from threading import Thread
+from core.server import *
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('127.0.0.1', 8080))
-s.listen(1)
-
-while True:
-    conn, _ = s.accept()
-    tcpserver = server.MYTCPServer(conn)
-    p = Thread(target=tcpserver.run)
-    p.start()
+ftpserver = socketserver.ThreadingTCPServer(('127.0.0.1', 8080), MYTCPServer)
+ftpserver.serve_forever()

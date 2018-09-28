@@ -49,6 +49,9 @@ class MYTCPClient:
                 if self.log_status:
                     inp = input(">>: ").strip()
                     if not inp: continue
+                    if inp=='q':
+                        self.client_close()
+                        break
                     l = inp.split()
                     cmd = l[0]
                     if hasattr(self, cmd):

@@ -1,23 +1,23 @@
 import os
 from lib import comm
-# from threading import Thread
+import socketserver
 
 
-class MYTCPServer():
+class MYTCPServer(socketserver.BaseRequestHandler):
     allow_reuse_address = False
     max_packet_size = 1024
     coding = 'utf-8'
     request_queue_size = 5
 
-    def __init__(self, conn):
-        """Constructor.  May be extended, do not override."""
-        super().__init__()
-        self.conn = conn
-        self.server_dir = ''
-        self.name = ''
+    # def __init__(self, request):
+    #     """Constructor.  May be extended, do not override."""
+    #     super().__init__()
+    #     self.request = request
+    #     self.server_dir = ''
+    #     self.name = ''
 
-    def run(self):
-        # 验证用户:
+    def handle(self):
+        print(self.request)
         while True:
             head_dic = comm.head_dic_unpack(self)
             if head_dic == -1: break
@@ -28,7 +28,7 @@ class MYTCPServer():
                 self.server_dir = 'user/%s' % head_dic['name']
                 self.name = head_dic['name']
 
-                self.conn.send('login success'.encode('utf-8'))
+                self.request.send('login success'.encode('utf-8'))
                 while True:
                     try:
                         head_dic = comm.head_dic_unpack(self)
@@ -41,7 +41,7 @@ class MYTCPServer():
                         break
             # 验证失败发送失败信息
             else:
-                self.conn.send('either of  name or password is wrong'.encode('utf-8'))
+                self.request.send('either of  name or password is wrong'.encode('utf-8'))
 
     def put(self, args):
         file_path = os.path.normpath(os.path.join(
@@ -73,7 +73,7 @@ class MYTCPServer():
                 recv_size = 0
                 with open(file_path, 'wb') as f:
                     while recv_size < filesize:
-                        recv_data = self.conn.recv(self.max_packet_size)
+                        recv_data = self.request.recv(self.max_packet_size)
                         f.write(recv_data)
                         recv_size += len(recv_data)
                     else:
@@ -86,7 +86,7 @@ class MYTCPServer():
                 recv_size = tell
                 with open(file_path, 'ab') as f:
                     while recv_size < filesize:
-                        recv_data = self.conn.recv(self.max_packet_size)
+                        recv_data = self.request.recv(self.max_packet_size)
                         f.write(recv_data)
                         recv_size += len(recv_data)
                     else:
@@ -102,5 +102,4 @@ class MYTCPServer():
         head_dic = {'file_list': l, 'fileSize': os.path.getsize(self.server_dir)}
         comm.head_dic_send(self, head_dic)
 
-# if __name__ == '__main__':
-#     pass
+
