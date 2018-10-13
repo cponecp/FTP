@@ -7,6 +7,21 @@ import struct
 import configparser
 import sys
 
+STATUS_CODE = {
+    250: "Invalid cmd format, e.g: {'action':'get','filename':'test.py','size':344}",
+    251: "Invalid cmd ",
+    252: "Invalid auth data",
+    253: "Wrong username or password",
+    254: "Passed authentication",
+    255: "Filename doesn't provided",
+    256: "File doesn't exist on server",
+    257: "ready to send file",
+    258: "md5 verification",
+    800: "the file exist,but not enough ,is continue? ",
+    801: "the file exist !",
+    802: " ready to receive datas",
+    900: "md5 valdate success"
+}
 
 # 从配置文件取参数
 def auth(section, thing):
@@ -41,28 +56,18 @@ def head_dic_send(self, dic):
     head_json_bytes = bytes(head_json, encoding=self.coding)
     head_struct = struct.pack('i', len(head_json_bytes))
 
-    if hasattr(self, 'request'):
-        self.request.send(head_struct)
-        self.request.send(head_json_bytes)
-    else:
-        self.socket.send(head_struct)
-        self.socket.send(head_json_bytes)
+    self.socket.send(head_struct)
+    self.socket.send(head_json_bytes)
 
     return 1
 
 
 def head_dic_unpack(self):
-    if hasattr(self, 'request'):
-        head_struct = self.request.recv(4)
-    else:
-        head_struct = self.socket.recv(4)
+    head_struct = self.socket.recv(4)
     if not head_struct: return -1
 
     head_len = struct.unpack('i', head_struct)[0]
-    if hasattr(self, 'request'):
-        head_json = self.request.recv(head_len).decode(self.coding)
-    else:
-        head_json = self.socket.recv(head_len).decode(self.coding)
+    head_json = self.socket.recv(head_len).decode(self.coding)
 
     return json.loads(head_json)
 

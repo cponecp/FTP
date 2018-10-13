@@ -1,8 +1,9 @@
 import socket
 import os
+import optparse
 from lib import comm
 
-
+# python client1.py -s 127.0.0.1 -P 8080 -u egon -p egon123
 class MYTCPClient:
     address_family = socket.AF_INET
     socket_type = socket.SOCK_STREAM
@@ -11,54 +12,55 @@ class MYTCPClient:
     coding = 'utf-8'
     request_queue_size = 5
 
-    def __init__(self, server_address, connect=True):
-        self.server_address = server_address
-        self.socket = socket.socket(self.address_family,
-                                    self.socket_type)
-        self.log_status = False
-        if connect:
-            try:
-                self.client_connect()
-                self.log_in()
-            except Exception:
-                self.client_close()
-                raise
+    def __init__(self):
+        self.op = optparse.OptionParser()
+        self.op.add_option('-s', '--server', dest='server')
+        self.op.add_option('-P', '--port', dest='port')
+        self.op.add_option('-u', '--user_name', dest='user_name')
+        self.op.add_option('-p', '--password', dest='password')
+        self.options, args = self.op.parse_args()
+        print(self.options)
+        self.user = None
+        try:
+            self.connection((self.options.server, int(self.options.port)))
+        except Exception:
+            self.client_close()
+            raise
+
+    def connection(self, address):
+        self.socket = socket.socket(self.address_family, self.socket_type)
+        self.socket.connect(address)
 
     def log_in(self):
-        user_name = input('请输入您的用户名:').strip()
-        password = input('请输入您的密码:').strip()
-        hash_pass = comm.hash_str(password)
-        user_dic = {'name': user_name,  'password': hash_pass}
+        hash_pass = comm.hash_str(self.options.password)
+        user_dic = {'name': self.options.user_name,  'password': hash_pass}
         comm.head_dic_send(self, user_dic)
 
         res = self.socket.recv(40)
-        if len(res) == 13:
-            self.log_status = True
-            print(res.decode(self.coding))
+        res_decode = int(res.decode('utf-8'))
+        if res_decode == 254:
+            self.user = self.options.user_name
+            print(comm.STATUS_CODE[res_decode])
         else:
-            print(res.decode(self.coding))
-
-    def client_connect(self):
-        self.socket.connect(self.server_address)
+            print(comm.STATUS_CODE[253])
 
     def client_close(self):
         self.socket.close()
 
     def run(self):
-            while True:
-                if self.log_status:
-                    inp = input(">>: ").strip()
-                    if not inp: continue
-                    if inp=='q':
-                        self.client_close()
-                        break
-                    l = inp.split()
-                    cmd = l[0]
-                    if hasattr(self, cmd):
-                        func = getattr(self, cmd)
-                        func(l)
-                else:
-                    self.log_in()
+        """处理用户的交互命令, 命令分发"""
+        self.log_in()
+        while True:
+            inp = input(">>: ").strip()
+            if not inp: continue
+            if inp=='q':
+                self.client_close()
+                break
+            l = inp.split()
+            cmd = l[0]
+            if hasattr(self, cmd):
+                func = getattr(self, cmd)
+                func(l)
 
     def put(self, args):
         cmd = args[0]
@@ -112,6 +114,10 @@ class MYTCPClient:
         for item in head_dic['file_list']:
             print(item)
 
+    def cd(self):
+        pass
 
-client = MYTCPClient(('127.0.0.1', 8080))
-client.run()
+
+if __name__ == '__main__':
+    client = MYTCPClient()
+    client.run()

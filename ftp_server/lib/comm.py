@@ -7,6 +7,21 @@ import struct
 import configparser
 import sys
 
+STATUS_CODE = {
+    250: "Invalid cmd format, e.g: {'action':'get','filename':'test.py','size':344}",
+    251: "Invalid cmd ",
+    252: "Invalid auth data",
+    253: "Wrong username or password",
+    254: "Passed authentication",
+    255: "Filename doesn't provided",
+    256: "File doesn't exist on server",
+    257: "ready to send file",
+    258: "md5 verification",
+    800: "the file exist,but not enough ,is continue? ",
+    801: "the file exist !",
+    802: " ready to receive datas",
+    900: "md5 valdate success"
+}
 
 # 从配置文件取参数
 def auth(section, thing):
@@ -17,8 +32,9 @@ def auth(section, thing):
 
 
 def hash_str(cont):
+    cont = str(cont)
     md = hashlib.md5()
-    md.update(cont.encode('utf8'))
+    md.update(cont.encode('utf-8'))
     return md.hexdigest()
 
 

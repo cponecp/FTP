@@ -9,15 +9,8 @@ class MYTCPServer(socketserver.BaseRequestHandler):
     coding = 'utf-8'
     request_queue_size = 5
 
-    # def __init__(self, request):
-    #     """Constructor.  May be extended, do not override."""
-    #     super().__init__()
-    #     self.request = request
-    #     self.server_dir = ''
-    #     self.name = ''
-
     def handle(self):
-        print(self.request)
+        print("server is working")
         while True:
             head_dic = comm.head_dic_unpack(self)
             if head_dic == -1: break
@@ -28,7 +21,7 @@ class MYTCPServer(socketserver.BaseRequestHandler):
                 self.server_dir = 'user/%s' % head_dic['name']
                 self.name = head_dic['name']
 
-                self.request.send('login success'.encode('utf-8'))
+                self.request.send(str(254).encode('utf-8'))
                 while True:
                     try:
                         head_dic = comm.head_dic_unpack(self)
@@ -101,5 +94,3 @@ class MYTCPServer(socketserver.BaseRequestHandler):
         l = os.listdir(self.server_dir)
         head_dic = {'file_list': l, 'fileSize': os.path.getsize(self.server_dir)}
         comm.head_dic_send(self, head_dic)
-
-
